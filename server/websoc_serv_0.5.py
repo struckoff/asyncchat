@@ -13,7 +13,7 @@ class Room_class(object):
 		self.password    = False
 
 	@asyncio.coroutine
-	def onDissconnect(self,client,reason = 'Access denied',clean = False):
+	def onDisconnect(self,client,reason = 'Access denied',clean = False):
 		if clean and not client.open:
 			print('Disconnected')
 			self.client_dict.pop(client)
@@ -106,17 +106,17 @@ def server(client, url):
 					if room_dict[room].password == data.get('room_password'):
 						asyncio.Task(room_dict[room].onConnect(client,data))
 					else:
-						asyncio.Task(room_dict[room].onDissconnect(client))
+						asyncio.Task(room_dict[room].onDisconnect(client))
 				else:
-					asyncio.Task(room_dict[room].onDissconnect(client))
+					asyncio.Task(room_dict[room].onDisconnect(client))
 			elif type_msg == 'message':
 				asyncio.Task(room_dict[room].onMessage(client,data))
 			else:
-				asyncio.Task(room_dict[room].onDissconnect(client))
+				asyncio.Task(room_dict[room].onDisconnect(client))
 
 	except Exception as error:
 		print("67: {}".format(error))
-		asyncio.Task(room_dict[room].onDissconnect(client,clean = True))
+		asyncio.Task(room_dict[room].onDisconnect(client,clean = True))
 
 starter = websockets.serve(server, 'localhost', 4042)
 
