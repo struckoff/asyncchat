@@ -82,7 +82,6 @@ def Enigma_match(name,token):
 
 @asyncio.coroutine
 def server(client, url):
-	# global client_dict
 	global room_dict
 
 	try:
@@ -99,8 +98,15 @@ def server(client, url):
 			if type_msg == 'login' and matcher(data):
 				room = data.get('room')
 				if Enigma_match(data.get('name'), data.get('token')):
-					room_dict[room] = Room_class() if not room_dict.get(room,False) else room_dict[room]
-					asyncio.Task(room_dict[room].onConnect(client,data))
+
+					if not room_dict.get(room,False):
+						room_dict[room] = Room_class()
+						room_dict[room].password = data.get('room_password')
+
+					if room_dict[room].password == data.get('room_password'):
+						asyncio.Task(room_dict[room].onConnect(client,data))
+					else:
+						asyncio.Task(room_dict[room].onDissconnect(client))
 				else:
 					asyncio.Task(room_dict[room].onDissconnect(client))
 			elif type_msg == 'message':
