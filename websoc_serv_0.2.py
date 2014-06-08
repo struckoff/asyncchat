@@ -2,62 +2,7 @@
 
 import asyncio,websockets,json,hashlib
 
-# @asyncio.coroutine
-# def Dissconnect(client,reason = 'Access denied'):
-# 	yield from client.send(json.dumps({'error':reason}))
-# 	yield from client.close(reason = reason) 
-# 	print('Dissconnect by 7')
-
-
-# client_dict = {}
-# user_list   = {}
 room_dict   = {}
-
-class Room(object):
-	"""Simple class of simple room"""
-
-	client_dict = {}
-	room_dict   = {}
-
-	@asyncio.coroutine
-	def Dissconnect(self,client,reason = 'Access denied',clean = False):
-		if clean and not client.open:
-			print('Disconnected')
-			self.client_dict.pop(client)
-			self.user_list.pop(client)
-			for client_item in self.client_dict:
-				yield from client_item.send(json.dumps({'user_list':list(self.user_list.values())}))
-		else:
-			yield from client.send(json.dumps({'error':reason}))
-			yield from client.close(reason = reason) 
-
-	@asyncio.coroutine
-	def onConnect(self,client):
-		if Enigma_match(data.get('name',False), data.get('token',False)):
-			room = data.get('room',False)
-			self.client_dict[client] = {
-                                        'token' :data.get('token'),
-									    'name'  :data.get('name')
-										}
-			self.user_list[client] = data.get('name')
-			return True
-		else:
-			asyncio.Task(self.Dissconnect(client))
-			return False
-
-	@asyncio.coroutine
-	def onMessage(self,client):
-		data_json = {
-						'message'  :data.get('message',False),
-						'image'    :data.get('image',False),
-						'user_list':list(room_dict[room]['user_list'].values()),
-						'name'     :data.get('name')
-		             }
-		data_json = json.dumps(data_json)
-		for client_item in self.client_dict:
-			yield from client_item.send(data_json)
-
-
 
 def Enigma_match(name,token):
 
@@ -124,8 +69,6 @@ def server(client, url):
 					yield from client.send(data_json)
 					yield from client.close()
 
-#Ёбаный пиздец, убери это
-#Определи нужен ли тебе pass_trigger
 			elif type_msg == 'message':
 				print('34: {}'.format(room_dict[room]['client_dict']))
 
