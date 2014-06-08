@@ -89,7 +89,6 @@ def server(client, url):
 		while client.open:
 			data = yield from client.recv()
 			data = json.loads(data)
-
 			type_msg = data.get('type_msg',False)
 
 			def matcher(data):
