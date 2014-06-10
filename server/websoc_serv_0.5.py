@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-import asyncio,websockets,json,hashlib
+import asyncio,websockets,json,hashlib,pymongo,time
 
-room_dict   = {}
+CONN = pymongo.Connection('localhost', 27017)
+DB = CONN['asyncchat_db']
+COLLECTION = DB['rooms']
+
+ROOM_DICT   = {}
 
 class Room_class(object):
 	"""Simple class of simple room"""
@@ -14,6 +18,7 @@ class Room_class(object):
 
 	@asyncio.coroutine
 	def onDisconnect(self,client,reason = 'Access denied',clean = False):
+		"""For disconctions by user/server"""
 		if clean and not client.open:
 			print('Disconnected')
 			self.client_dict.pop(client)
@@ -32,23 +37,30 @@ class Room_class(object):
 
 	@asyncio.coroutine
 	def onConnect(self,client,data):
+		"""Second level hendshake"""
 		self.client_dict[client] = {
                                     'token' :data.get('token'),
 								    'name'  :data.get('name')
 									}
-		self.user_list[client] = data.get('name')
 
-		data_json = {
-					'user_list':list(self.user_list.values()),
-					'name'     :data.get('name')
-	             }
-	             
-		data_json = json.dumps(data_json)
-		for client_item in self.client_dict:
-			yield from client_item.send(data_json)	
+		if data.get('name') in self.user_list.values():
+			print(data.get('name') in self.user_list.values())
+			asyncio.Task(self.onDisconnect(client,reason = 'User already exists'))
+		else:
+			self.user_list[client] = data.get('name')
+
+			data_json = {
+						'user_list':list(self.user_list.values()),
+						'name'     :data.get('name')
+		             }
+		             
+			data_json = json.dumps(data_json)
+			for client_item in self.client_dict:
+				yield from client_item.send(data_json)	
 
 	@asyncio.coroutine
 	def onMessage(self,client,data):
+		"""Parsing messages from clients"""
 		data_json = {
 						'message'  :data.get('message',False),
 						'image'    :data.get('image',False),
@@ -82,7 +94,7 @@ def Enigma_match(name,token):
 
 @asyncio.coroutine
 def server(client, url):
-	global room_dict
+	global ROOM_DICT
 
 	try:
 		while client.open:
@@ -90,33 +102,37 @@ def server(client, url):
 			data = json.loads(data)
 			type_msg = data.get('type_msg',False)
 
-			def matcher(data):
-				match_list = ['name','token','room']
-				match_list = list(map(lambda key:data.get(key,False),match_list))
-				return all(match_list)
+			crypt_test = Enigma_match(data.get('name'), data.get('token'))
+			room_test  = data.get('room',False)
 
-			if type_msg == 'login' and matcher(data):
+			if all([(type_msg == 'login'),room_test,crypt_test]):
 				room = data.get('room')
-				if Enigma_match(data.get('name'), data.get('token')):
+				room_pass_test = False
+				room_token = data.get('room_token',False)
 
-					if not room_dict.get(room,False):
-						room_dict[room] = Room_class()
-						room_dict[room].password = data.get('room_password')
+				if not ROOM_DICT.get(room,False):
+					ROOM_DICT[room] = Room_class()
+					ROOM_DICT[room].password = room_token
+					room_pass_test = True
 
-					if room_dict[room].password == data.get('room_password'):
-						asyncio.Task(room_dict[room].onConnect(client,data))
-					else:
-						asyncio.Task(room_dict[room].onDisconnect(client))
+					log = {room:{'token':room_token}}
+					COLLECTION.save(log)
 				else:
-					asyncio.Task(room_dict[room].onDisconnect(client))
+					room_pass_test = (ROOM_DICT[room].password == room_token)
+
+				asyncio.Task(ROOM_DICT[room].onConnect(client,data) if room_pass_test else ROOM_DICT[room].onDisconnect(client))
+			
 			elif type_msg == 'message':
-				asyncio.Task(room_dict[room].onMessage(client,data))
+				asyncio.Task(ROOM_DICT[room].onMessage(client,data))
+
+				log = {room:{'message':data.get('message',False),'name':ROOM_DICT[room].user_list[client],'image':data.get('image',False),'time':time.time()}}
+				COLLECTION.save(log)
 			else:
-				asyncio.Task(room_dict[room].onDisconnect(client))
+				asyncio.Task(ROOM_DICT[room].onDisconnect(client))
 
 	except Exception as error:
 		print("67: {}".format(error))
-		asyncio.Task(room_dict[room].onDisconnect(client,clean = True))
+		asyncio.Task(ROOM_DICT[room].onDisconnect(client,clean = True))
 
 starter = websockets.serve(server, 'localhost', 4042)
 
