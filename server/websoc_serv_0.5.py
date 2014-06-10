@@ -9,7 +9,7 @@ COLLECTION = DB['rooms']
 ROOM_DICT   = {}
 
 class Room_class(object):
-	"""Simple class of simple room"""
+	"""Simple class of a simple room"""
 
 	def __init__(self):
 		self.client_dict = {}
