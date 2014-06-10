@@ -2,11 +2,11 @@
 
 import asyncio,websockets,json,hashlib,pymongo,time
 
-CONN = pymongo.Connection('localhost', 27017)
-DB = CONN['asyncchat_db']
+CONN       = pymongo.Connection('localhost', 27017)
+DB         = CONN['asyncchat_db']
 COLLECTION = DB['rooms']
 
-ROOM_DICT   = {}
+ROOM_DICT  = {}
 
 class Room_class(object):
 	"""Simple class of a simple room"""
