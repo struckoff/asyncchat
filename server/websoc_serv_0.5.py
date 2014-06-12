@@ -98,16 +98,14 @@ def server(client, url):
 			data       = yield from client.recv()
 			data       = json.loads(data)
 			type_msg   = data.get('type_msg',False)
-			print(type_msg)
 			
 			crypt_test = Enigma_match(data.get('name'), data.get('token'))
 
 			if all([(type_msg == 'login'),data.get('room',False),crypt_test]):
-				room       = data.get('room',False)
+				room            = data.get('room',False)
 				connect_trigger = [False,'Access denied']
 				room_token      = data.get('room_token',False)
 
-				print('111: {}'.format(room))
 				if not ROOM_DICT.get(room,False):
 					print('113: {}'.format(ROOM_DICT.get(room,False)))
 					ROOM_DICT[room]          = Room_class()
@@ -137,13 +135,9 @@ def server(client, url):
 				asyncio.Task(Tasks[connect_trigger[0]]())
 			
 			elif type_msg == 'message':
-				try:
-					asyncio.Task(ROOM_DICT[room].onMessage(client,data))
-				except Exception as error:
-					print('143: {}'.format(error))
-					raise error
+				asyncio.Task(ROOM_DICT[room].onMessage(client,data))
 
-				doc = {
+				doc = {                                                                 #!!
 						'room_name':room,
 						'message'  :data.get('message',False),
 						'user'     :ROOM_DICT[room].user_list[client],
