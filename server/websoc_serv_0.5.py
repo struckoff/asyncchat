@@ -93,65 +93,64 @@ def Enigma_match(name,token):
 def server(client, url):
 	global ROOM_DICT
 
-	# try:
-		while client.open:
-			data       = yield from client.recv()
-			data       = json.loads(data)
-			type_msg   = data.get('type_msg',False)
-			
-			crypt_test = Enigma_match(data.get('name'), data.get('token'))
+	while client.open:
+		data = yield from client.recv()
 
-			if all([(type_msg == 'login'),data.get('room',False),crypt_test]):
-				room            = data.get('room',False)
-				connect_trigger = [False,'Access denied']
-				room_token      = data.get('room_token',False)
+		if data == None:
+			asyncio.Task(ROOM_DICT[room].onDisconnect(client,clean = True))
 
-				if not ROOM_DICT.get(room,False):
-					print('113: {}'.format(ROOM_DICT.get(room,False)))
-					ROOM_DICT[room]          = Room_class()
-					ROOM_DICT[room].password = room_token
-					connect_trigger[0]       = True
+		data     = json.loads(data)
+		type_msg = data.get('type_msg',False)
+		
+		crypt_test = Enigma_match(data.get('name'), data.get('token'))
 
-					doc = {
-					        'room_name' :room,
-					        'room_token':room_token
-					      }
-					COLLECTION_ROOMS.save(doc)
-				else:
-					connect_trigger[0] = (ROOM_DICT[room].password == room_token)
+		if all([(type_msg == 'login'),data.get('room',False),crypt_test]):
+			room            = data.get('room',False)
+			connect_trigger = [False,'Access denied']
+			room_token      = data.get('room_token',False)
 
-				if connect_trigger[0]:
-					connect_trigger = [
-					                   not data.get('name') in ROOM_DICT[room].user_list.values(),
-					                   "User already exists"
-					                   ]
-				print("123: {}".format(connect_trigger[0]))
+			if not ROOM_DICT.get(room,False):
+				print('113: {}'.format(ROOM_DICT.get(room,False)))
+				ROOM_DICT[room]          = Room_class()
+				ROOM_DICT[room].password = room_token
+				connect_trigger[0]       = True
 
-				Tasks = [
-						  lambda: ROOM_DICT[room].onDisconnect(client,reason = connect_trigger[1]),
-						  lambda: ROOM_DICT[room].onConnect(client,data)
-						]
-
-				asyncio.Task(Tasks[connect_trigger[0]]())
-			
-			elif type_msg == 'message':
-				asyncio.Task(ROOM_DICT[room].onMessage(client,data))
-
-				doc = {                                                                 #!!
-						'room_name':room,
-						'message'  :data.get('message',False),
-						'user'     :ROOM_DICT[room].user_list[client],
-						'image'    :data.get('image',False),
-						'time'     :time.time()				        
+				doc = {
+				        'room_name' :room,
+				        'room_token':room_token
 				      }
-
-				COLLECTION_MESSAGES.save(doc)
+				COLLECTION_ROOMS.save(doc)
 			else:
-				asyncio.Task(ROOM_DICT[room].onDisconnect(client))
+				connect_trigger[0] = (ROOM_DICT[room].password == room_token)
 
-	except Exception as error:
-		print("150: {}".format(error))
-		asyncio.Task(ROOM_DICT[room].onDisconnect(client,clean = True))
+			if connect_trigger[0]:
+				connect_trigger = [
+				                   not data.get('name') in ROOM_DICT[room].user_list.values(),
+				                   "User already exists"
+				                   ]
+			print("123: {}".format(connect_trigger[0]))
+
+			Tasks = [
+					  lambda: ROOM_DICT[room].onDisconnect(client,reason = connect_trigger[1]),
+					  lambda: ROOM_DICT[room].onConnect(client,data)
+					]
+
+			asyncio.Task(Tasks[connect_trigger[0]]())
+		
+		elif type_msg == 'message':
+			asyncio.Task(ROOM_DICT[room].onMessage(client,data))
+
+			doc = {                                                                 #!!
+					'room_name':room,
+					'message'  :data.get('message',False),
+					'user'     :ROOM_DICT[room].user_list[client],
+					'image'    :data.get('image',False),
+					'time'     :time.time()				        
+			      }
+
+			COLLECTION_MESSAGES.save(doc)
+		else:
+			asyncio.Task(ROOM_DICT[room].onDisconnect(client))
 
 starter = websockets.serve(server, 'localhost', 4042)
 
