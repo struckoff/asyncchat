@@ -4,7 +4,7 @@ import asyncio,websockets,json,pymongo,time
 from lib import *
 
 # CONN                = pymongo.Connection('localhost', 27017)
-CONN                = pymongo.MongoClient('mongodb://:@kahana.mongohq.com:10047/async_db')
+CONN                = pymongo.MongoClient('mongodb://qwe:rty@kahana.mongohq.com:10047/async_db')
 DB                  = CONN['async_db']
 COLLECTION_ROOMS    = DB['rooms']
 COLLECTION_MESSAGES = DB['messages']
