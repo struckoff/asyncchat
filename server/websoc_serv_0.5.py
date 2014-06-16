@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import asyncio,websockets,json,hashlib,pymongo,time
+import asyncio,websockets,json,pymongo,time
+from lib import *
 
 CONN                = pymongo.Connection('localhost', 27017)
 DB                  = CONN['asyncchat_db']
@@ -9,85 +10,11 @@ COLLECTION_MESSAGES = DB['messages']
 
 ROOM_DICT           = {}
 
-class Room_class(object):
-	"""Simple class of a simple room"""
-
-	def __init__(self):
-		self.user_list   = {}
-		self.password    = False
-
-	@asyncio.coroutine
-	def onDisconnect(self,client,reason = 'Access denied',clean = False):
-		if clean and not client.open:
-			print('Disconnected')
-			if self.user_list.get(client,False):
-				self.user_list.pop(client)
-			for client_item in self.user_list:
-				yield from client_item.send(json.dumps({'user_list':list(self.user_list.values())}))
-		else:
-			yield from client.send(json.dumps({'error':reason}))
-			yield from client.close(reason = reason)
-
-		data_json = {'user_list':list(self.user_list.values())}
-		data_json = json.dumps(data_json)
-
-		for client_item in self.user_list:
-			yield from client_item.send(data_json)	
-
-	@asyncio.coroutine
-	def onConnect(self,client,data):
-		"""Second level hendshake"""
-
-		self.user_list[client] = data.get('name')
-
-		data_json = {
-					'user_list':list(self.user_list.values()),
-					'name'     :data.get('name')
-	             }
-	             
-		data_json = json.dumps(data_json)
-		for client_item in self.user_list:
-			yield from client_item.send(data_json)	
-
-	@asyncio.coroutine
-	def onMessage(self,client,data):
-		"""Parsing messages from clients"""
-		data_json = {
-						'message'  :data.get('message',False),
-						'image'    :data.get('image',False),
-						'name'     :data.get('name',False)
-		             }
-		data_json = json.dumps(data_json)
-		for client_item in self.user_list:
-			yield from client_item.send(data_json)
-
 for item in COLLECTION_ROOMS.find():
 	ROOM_DICT[item['room_name']]          = Room_class()
 	ROOM_DICT[item['room_name']].password = item['room_token']
 
 print('77: {}'.format(ROOM_DICT))
-
-def Enigma_match(name,token):
-
-	if not (name and token):
-		return False
-
-	hashes={
-				0:hashlib.md5,
-				1:hashlib.sha512,
-				2:hashlib.sha224,
-				3:hashlib.sha1
-	        }
-
-	kreator = hashes.get(int(token[0]),False)
-
-	if not kreator:
-		return False
-	else:
-		kreator = kreator()
-		kreator.update(name.encode())
-
-	return token[1:] == kreator.hexdigest()
 
 @asyncio.coroutine
 def server(client, url):
@@ -136,14 +63,20 @@ def server(client, url):
 					]
 
 			asyncio.Task(Tasks[connect_trigger[0]]())
+
+			if connect_trigger[0]:
+				for item in COLLECTION_MESSAGES.find().sort('time'):
+					asyncio.Task(ROOM_DICT[room].onMessage(data = item))
+
 		
 		elif type_msg == 'message':
-			asyncio.Task(ROOM_DICT[room].onMessage(client,data))
+			data['time'] = time.time() 
+			asyncio.Task(ROOM_DICT[room].onMessage(data = data))
 
 			doc = {                                                                 #!!
 					'room_name':room,
 					'message'  :data.get('message',False),
-					'user'     :ROOM_DICT[room].user_list[client],
+					'name'     :ROOM_DICT[room].user_list[client],
 					'image'    :data.get('image',False),
 					'time'     :time.time()				        
 			      }
