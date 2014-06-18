@@ -89,7 +89,7 @@ def server(client, url):
 		else:
 			asyncio.Task(ROOM_DICT[room].onDisconnect(client))
 
-starter = websockets.serve(server, 'localhost', 4042)
+starter = websockets.serve(server, '0.0.0.0', 4042)
 
 asyncio.get_event_loop().run_until_complete(starter)
 asyncio.get_event_loop().run_forever()
