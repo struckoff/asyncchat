@@ -11,11 +11,8 @@ COLLECTION_MESSAGES = DB['messages']
 
 ROOM_DICT           = {}
 
-for item in COLLECTION_ROOMS.find():
-	ROOM_DICT[item['room_name']]          = Room_class()
-	ROOM_DICT[item['room_name']].password = item['room_token']
-
-print('77: {}'.format(ROOM_DICT))
+#Восстанавливаем комнаты из бэкапа
+ROOM_DICT.update((item['room_name'],Room_class(item.get('room_token',False))) for item in COLLECTION_ROOMS.find())
 
 @asyncio.coroutine
 def server(client, url):
@@ -24,8 +21,11 @@ def server(client, url):
 	while client.open:
 		data = yield from client.recv()
 
+		#При отключение польвателя data принимет значение None, используем это для ловде отключившихся
 		if data == None:
 			asyncio.Task(ROOM_DICT[room].onDisconnect(client,clean = True))
+			print('User {} disconnected'.format(ROOM_DICT[room].user_list[client]))
+
 
 		data     = json.loads(data)
 		type_msg = data.get('type_msg',False)
@@ -38,12 +38,11 @@ def server(client, url):
 			room_token      = data.get('room_token',False)
 
 			if not ROOM_DICT.get(room,False):
-				print('113: {}'.format(ROOM_DICT.get(room,False)))
-				ROOM_DICT[room]          = Room_class()
-				ROOM_DICT[room].password = room_token
+				ROOM_DICT[room]          = Room_class(room_token)
 				connect_trigger[0]       = True
 
-				doc = {
+				#Небольшое бэкап списка комнат (на случай рестарта сервера)
+				doc = { 
 				        'room_name' :room,
 				        'room_token':room_token
 				      }
@@ -56,25 +55,29 @@ def server(client, url):
 				                   not data.get('name') in ROOM_DICT[room].user_list.values(),
 				                   "User already exists"
 				                   ]
-			print("123: {}".format(connect_trigger[0]))
 
-			Tasks = [
+					#небольшая альтернатива условиям
+			Tasks = [ 
 					  lambda: ROOM_DICT[room].onDisconnect(client,reason = connect_trigger[1]),
 					  lambda: ROOM_DICT[room].onConnect(client,data)
 					]
 
-			asyncio.Task(Tasks[connect_trigger[0]]())
+			asyncio.Task(Tasks[connect_trigger[0]]()) #решаем что делать с пользователем
 
+			#Рассылаем логи
 			if connect_trigger[0]:
 				for item in COLLECTION_MESSAGES.find().sort('time'):
 					asyncio.Task(ROOM_DICT[room].onMessage(data = item))
 
+				print('User {} conneced'.format(data.get('name',False)))
 		
 		elif type_msg == 'message':
 			data['time'] = time.time() 
+			data['name'] = ROOM_DICT[room].user_list[client]
 			asyncio.Task(ROOM_DICT[room].onMessage(data = data))
 
-			doc = {                                                                 #!!
+			#Отправляем полученое сообщение в БД (храним логи)
+			doc = {                                                                 
 					'room_name':room,
 					'message'  :data.get('message',False),
 					'name'     :ROOM_DICT[room].user_list[client],

@@ -3,14 +3,13 @@ import asyncio,json,hashlib,time
 class Room_class(object):
 	"""Simple class of a simple room"""
 
-	def __init__(self):
+	def __init__(self,password = False):
 		self.user_list   = {}
-		self.password    = False
+		self.password    = password
 
 	@asyncio.coroutine
 	def onDisconnect(self,client,reason = 'Access denied',clean = False):
 		if clean and not client.open:
-			print('Disconnected')
 			if self.user_list.get(client,False):
 				self.user_list.pop(client)
 			for client_item in self.user_list:
