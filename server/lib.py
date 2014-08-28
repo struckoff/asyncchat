@@ -1,4 +1,7 @@
-import asyncio,json,hashlib,time
+import asyncio
+import json
+import hashlib
+import time
 
 class Room_class(object):
 	"""Simple class of a simple room"""
@@ -40,7 +43,7 @@ class Room_class(object):
 			yield from client_item.send(data_json)
 
 	@asyncio.coroutine
-	def onMessage(self,data=False):
+	def onMessage(self,data=False,client=False):
 		"""Parsing messages from clients"""
 		data_json = {
 						'message'  :data.get('message',False),
@@ -49,8 +52,11 @@ class Room_class(object):
 						'time'     :data.get('time'   ,False),
 		             }
 		data_json = json.dumps(data_json)
-		for client_item in self.user_list:
-			yield from client_item.send(data_json)
+		if client:
+			yield from client.send(data_json)
+		else:
+			for client_item in self.user_list:
+				yield from client_item.send(data_json)
 
 def Enigma_match(name,token):
 
