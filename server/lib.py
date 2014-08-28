@@ -3,7 +3,6 @@ import json
 import hashlib
 import time
 
-
 class Room_class(object):
 	"""Simple class of a simple room"""
 
