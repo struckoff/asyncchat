@@ -6,9 +6,12 @@ import websockets
 import json
 import pymongo
 import time
+from aiohttp import web
 from lib import *
 
-CONN = pymongo.Connection('localhost', 27017)
+PORT = 4042
+
+CONN = pymongo.MongoClient('localhost', 27017)
 DB = CONN['async_db']
 COLLECTION_ROOMS = DB['rooms']
 COLLECTION_MESSAGES = DB['messages']
@@ -18,8 +21,28 @@ ROOM_DICT = {item['room_name']: Room_class(item.get('room_token', False)) for it
 
 
 @asyncio.coroutine
+def html_handler(request):
+    print(request)
+    with open('templates/async_login.html', 'r') as template:
+        response = web.Response(text=template.read())
+        response.content_type = 'text/html; charset=UTF-8'
+        return response
+
+
+@asyncio.coroutine
+def post_handler(request):
+    print(request)
+    with open('templates/async.html', 'r') as template:
+        response = web.Response(text=template.read())
+        response.content_type = 'text/html; charset=UTF-8'
+        return response
+
+
+@asyncio.coroutine
 def server(client, url):
     global ROOM_DICT
+
+    print("Server started on: ", PORT)
 
     while client.open:
         data = yield from client.recv()
@@ -59,7 +82,7 @@ def server(client, url):
                                    ]
 
             Tasks = [
-                      lambda: ROOM_DICT[room].onDisconnect(client,reason=connect_trigger[1]),
+                      lambda: ROOM_DICT[room].onDisconnect(client, reason=connect_trigger[1]),
                       lambda: ROOM_DICT[room].onConnect(client, data)
                     ]
 
@@ -90,7 +113,7 @@ def server(client, url):
         else:
             asyncio.Task(ROOM_DICT[room].onDisconnect(client))
 
-starter = websockets.serve(server, '0.0.0.0', 4042)
+starter = websockets.serve(server, '0.0.0.0', PORT)
 
 asyncio.get_event_loop().run_until_complete(starter)
 asyncio.get_event_loop().run_forever()

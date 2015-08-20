@@ -1,0 +1,66 @@
+ <!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Async chat</title>
+
+ 	<!-- JQuery -->
+  	<script src="/static/jquery-2.1.0.js"></script>
+  	<!-- Expander  -->
+  	<script src="/static/jquery.expander.js"></script>
+	<!-- LightBox -->
+	<link rel="stylesheet" href="/lightbox/css/lightbox.css">
+	<script src="/static/lightbox/js/jquery-1.11.0.min.js"></script>
+	<script src="/static/lightbox/js/lightbox.js"></script>
+	<!-- Font -->
+	<link href='http://fonts.googleapis.com/css?family=Titillium+Web:400,300' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  	<!-- Foundation -->
+    <link rel="stylesheet" href="/static/foundation/css/foundation.css" />
+    <script src="/static/foundation/js/vendor/jquery.js"></script>
+    <script src="/static/foundation/js/vendor/modernizr.js"></script>
+    <script src="/static/foundation/js/foundation/foundation.js"></script>
+    <script src="/static/foundation/js/foundation/foundation.abide.js"></script>
+    <script src="/static/foundation/js/foundation/foundation.reveal.js"></script>
+	<script>$(document).foundation();</script>
+
+	<div id="chat_block" class = 'row'>
+		<div id="main_block"  class="large-11 columns">
+			<div id="message"></div>
+			<div id="user_inter">
+		    	<div id="message_send">
+			    	<input type="text" id="sending_message" name="sending_message" placeholder='message'>
+					<button  id="send" >SEND</button>
+		    	</div>
+		    	<div id="low_line">
+			    	<input type="file" id='uploader'>
+			    	<form id="sub_form" action="" method="post">
+						<input type="submit" class = 'button' name = 'out' value = 'Quit'>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div id="user_list"  class="show-for-large-only"></div>
+	</div>
+
+
+	<div id='error' class="reveal-modal" data-reveal>
+
+		<form id="" action="" method="post">
+			<input type="submit" class = 'button' name = 'out' value = 'Quit' style = 'background: darkred;'>
+		</form>
+	</div>
+
+	</body>
+
+	<script>
+	var name_js_from       = '{{name}}';
+	var token_js_from      = '{{token}}';
+	var room_js_from       = '{{room}}';
+	var room_token_js_from = '{{room_password}}';
+
+	</script>
+    <script src="/static/web/client.js"></script>
+	<link rel="stylesheet" href='/static/web/style.css'>
+</html>
