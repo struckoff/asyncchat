@@ -8,7 +8,6 @@ def websocket_handler(request):
 
     ws = web.WebSocketResponse()
     ws.start(request)
-    print(request)
 
     while True:
         msg = yield from ws.receive()
@@ -35,17 +34,19 @@ def index_handler(request):
 
 
 @asyncio.coroutine
-def html_handler(request):
-    # data = yield from request.get()
-    # print(data)
-    with open('templates/async_login.html', 'r') as template:
-        response = web.Response(text=template.read())
-        response.content_type = 'text/html; charset=UTF-8'
-        return response
+def login_handler(request):
+    data = yield from request.post()
+    if data:
+        return (yield from main_handler(request))
+    else:
+        with open('templates/async_login.html', 'r') as template:
+            response = web.Response(text=template.read())
+            response.content_type = 'text/html; charset=UTF-8'
+            return response
 
 
 @asyncio.coroutine
-def post_handler(request):
+def main_handler(request):
     data = yield from request.post()
     print(data)
     with open('templates/async.html', 'r') as template:
@@ -56,8 +57,9 @@ def post_handler(request):
 
 app = web.Application()
 app.router.add_static(path='static', prefix='/static/')
-app.router.add_route('GET', '/', html_handler)
-app.router.add_route('POST', '/', post_handler)
+app.router.add_route('*', '/html', login_handler)
+# app.router.add_route('POST', '/html', post_handler)
+app.router.add_route('GET', '/', websocket_handler)
 loop = asyncio.get_event_loop()
 handler = app.make_handler()
 f = loop.create_server(handler, '0.0.0.0', 4042)

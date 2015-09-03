@@ -1,84 +1,77 @@
+"""Room class module"""
+
 import asyncio
 import json
 import hashlib
 import time
 
 
-class Room_class(object):
+class Room(object):
     """Simple class of a simple room"""
 
-    def __init__(self, password=False):
+    def __init__(self, password):
         self.user_list = {}
-        self.password = password
+        self.__set_password(password)
+
+    def check_password(self, client_passwd):
+        """Cmp passwords of room and client"""
+        crypt = hashlib.sha256()
+        crypt.update(client_passwd.encode())
+        return crypt.hexdigest() == self.__password
+
+    def __set_password(self, room_passwd):
+        """Set room password"""
+        crypt = hashlib.sha256()
+        crypt.update(room_passwd.encode())
+        self.__password = crypt.hexdigest()
 
     @asyncio.coroutine
-    def onDisconnect(self, client, reason='Access denied', clean=False):
-        if clean and not client.open:
-            if self.user_list.get(client, False):
-                self.user_list.pop(client)
-            for client_item in self.user_list:
-                yield from client_item.send(json.dumps({'user_list': list(self.user_list.values())}))
-        else:
-            yield from client.send(json.dumps({'error': reason}))
-            yield from client.close(reason=reason)
+    def on_disconnect(self, client):
+        """Handle disconnection of user"""
+        nick = self.user_list[client]
 
-        data_json = {'user_list': list(self.user_list.values())}
+        if self.user_list.get(client):
+            self.user_list.pop(client)
+
+        data_json = {'user_list': list(self.user_list.values()),
+                     'message': '{} has left'.format(nick),
+                     'name': 'SERVER',
+                     'time': time.time(),
+                     }
         data_json = json.dumps(data_json)
 
         for client_item in self.user_list:
-            yield from client_item.send(data_json)
+            client_item.send_str(data_json)
 
     @asyncio.coroutine
-    def onConnect(self, client, data):
-        """Second level hendshake"""
+    def on_connect(self, client, data):
+        """Handle connection of user"""
 
         self.user_list[client] = data.get('name')
 
         data_json = {
                     'user_list': list(self.user_list.values()),
                     'name': data.get('name')
-                 }
+                    }
 
         data_json = json.dumps(data_json)
         for client_item in self.user_list:
-            yield from client_item.send(data_json)
+            client_item.send_str(data_json)
 
     @asyncio.coroutine
-    def onMessage(self, data=False, client=False):
-        """Parsing messages from clients"""
+    def on_message(self, client, data, reciever=None):
+        """Handle messages from user"""
 
         data_json = {
-                        'message': data.get('message', False),
-                        'image': data.get('image', False),
-                        'name': data.get('name', False),
-                        'time': data.get('time', False),
+                        'message': data.get('message'),
+                        'image': data.get('image'),
+                        'name': self.user_list[client],
+                        'time': data.get('time'),
                      }
 
         data_json = json.dumps(data_json)
-        if client:
-            yield from client.send(data_json)
+        if reciever is not None:
+            reciever.send_str(data_json)
         else:
-            for client_item in self.user_list:
-                yield from client_item.send(data_json)
-
-
-def Enigma_match(name, token):
-    if not (name and token):
-        return False
-
-    hashes = {
-                0: hashlib.md5,
-                1: hashlib.sha512,
-                2: hashlib.sha224,
-                3: hashlib.sha1
-            }
-
-    kreator = hashes.get(int(token[0]), False)
-
-    if not kreator:
-        return False
-    else:
-        kreator = kreator()
-        kreator.update(name.encode())
-
-    return token[1:] == kreator.hexdigest()
+            for client in self.user_list:
+                client.send_str(data_json)

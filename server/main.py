@@ -2,118 +2,87 @@
 # coding=utf-8
 
 import asyncio
-import websockets
 import json
-import pymongo
-import time
+import aiohttp
 from aiohttp import web
-from lib import *
+from lib import Room
 
 PORT = 4042
-
-CONN = pymongo.MongoClient('localhost', 27017)
-DB = CONN['async_db']
-COLLECTION_ROOMS = DB['rooms']
-COLLECTION_MESSAGES = DB['messages']
-
-# Восстанавливаем комнаты из бэкапа
-ROOM_DICT = {item['room_name']: Room_class(item.get('room_token', False)) for item in COLLECTION_ROOMS.find()}
+ROOM_DICT = {}
 
 
 @asyncio.coroutine
-def html_handler(request):
-    print(request)
-    with open('templates/async_login.html', 'r') as template:
+def main_handler(request):
+    with open('templates/single_page.html', 'r') as template:
         response = web.Response(text=template.read())
         response.content_type = 'text/html; charset=UTF-8'
         return response
 
 
 @asyncio.coroutine
-def post_handler(request):
-    print(request)
-    with open('templates/async.html', 'r') as template:
-        response = web.Response(text=template.read())
-        response.content_type = 'text/html; charset=UTF-8'
-        return response
+def websocket_handler(request):
+    client = web.WebSocketResponse()
+    client.start(request)
+    room = None
+
+    def access_granted(data):
+        asyncio.Task(ROOM_DICT[data['room']].on_connect(client, data))
+        with open('templates/chat.html', 'r') as template:
+            res = json.dumps({'body': template.read()})
+            client.send_str(res)
+
+    while True:
+        msg = yield from client.receive()
+
+        if msg.tp == aiohttp.MsgType.text:
+            data = json.loads(msg.data)
+            if data['type_msg'] == 'login':
+                room = ROOM_DICT.get(data['room'])
+                if room:
+                    if not room.check_password(data['room_pass']):
+                        yield from client.close()
+                    else:
+                        access_granted(data)
+                else:
+                    ROOM_DICT[data['room']] = Room(data['room_pass'])
+                    room = ROOM_DICT.get(data['room'])
+                    access_granted(data)
+
+                # client.send_str(msg.data)
+            elif data['type_msg'] == 'message' and (room is not None):
+                asyncio.Task(room.on_message(client, data=data))
+
+        elif msg.tp == aiohttp.MsgType.close:
+            asyncio.Task(room.on_disconnect(client))
+            print('websocket connection closed')
+            break
+        elif msg.tp == aiohttp.MsgType.error:
+            print('ws connection closed with exception %s', ws.exception())
+            break
+
+    return client
 
 
-@asyncio.coroutine
-def server(client, url):
-    global ROOM_DICT
+APP = web.Application()
 
-    print("Server started on: ", PORT)
+APP.router.add_static(path='static', prefix='/static/')
+APP.router.add_route('*', '/', main_handler)
+APP.router.add_route('GET', '/ws', websocket_handler)
 
-    while client.open:
-        data = yield from client.recv()
+LOOP = asyncio.get_event_loop()
+HANDLER = APP.make_handler()
+SERVER_FACTORY = LOOP.create_server(HANDLER, '0.0.0.0', 4042)
+SERVER = LOOP.run_until_complete(SERVER_FACTORY)
 
-        # Ловим отключившихся
-        if data is None:
-            asyncio.Task(ROOM_DICT[room].onDisconnect(client, clean=True))
-            print('User {} disconnected'.format(ROOM_DICT[room].user_list[client]))
+print('serving on', SERVER.sockets[0].getsockname())
 
-        data = json.loads(data)
-        type_msg = data.get('type_msg', False)
-
-        crypt_test = Enigma_match(data.get('name'), data.get('token'))
-
-        if all([(type_msg == 'login'), data.get('room', False), crypt_test]):
-            room = data.get('room', False)
-            connect_trigger = [False, 'Access denied']
-            room_token = data.get('room_token', False)
-
-            if not ROOM_DICT.get(room, False):
-                ROOM_DICT[room] = Room_class(room_token)
-                connect_trigger[0] = True
-
-                # Бэкап списка комнат
-                doc = {
-                        'room_name': room,
-                        'room_token': room_token
-                       }
-                COLLECTION_ROOMS.save(doc)
-            else:
-                connect_trigger[0] = (ROOM_DICT[room].password == room_token)
-
-            if connect_trigger[0]:
-                connect_trigger = [
-                                   not data.get('name') in ROOM_DICT[room].user_list.values(),
-                                   "User already exists"
-                                   ]
-
-            Tasks = [
-                      lambda: ROOM_DICT[room].onDisconnect(client, reason=connect_trigger[1]),
-                      lambda: ROOM_DICT[room].onConnect(client, data)
-                    ]
-
-            asyncio.Task(Tasks[connect_trigger[0]]())
-
-            # Рассылаем логи
-            if connect_trigger[0]:
-                for item in COLLECTION_MESSAGES.find().sort('time'):
-                    asyncio.Task(ROOM_DICT[room].onMessage(data=item))
-
-                print('User {} conneced'.format(data.get('name', False)))
-
-        elif type_msg == 'message':
-            data['time'] = time.time()
-            data['name'] = ROOM_DICT[room].user_list[client]
-            asyncio.Task(ROOM_DICT[room].onMessage(data=data))
-
-            # Отправляем полученое сообщение в БД (храним логи)
-            doc = {
-                    'room_name': room,
-                    'message': data.get('message', False),
-                    'name': ROOM_DICT[room].user_list[client],
-                    'image': data.get('image', False),
-                    'time': time.time()
-                  }
-
-            COLLECTION_MESSAGES.save(doc)
-        else:
-            asyncio.Task(ROOM_DICT[room].onDisconnect(client))
-
-starter = websockets.serve(server, '0.0.0.0', PORT)
-
-asyncio.get_event_loop().run_until_complete(starter)
-asyncio.get_event_loop().run_forever()
+try:
+    LOOP.run_forever()
+except KeyboardInterrupt:
+    pass
+finally:
+    LOOP.run_until_complete(HANDLER.finish_connections(1.0))
+    SERVER.close()
+    LOOP.run_until_complete(SERVER.wait_closed())
+    LOOP.run_until_complete(APP.finish())
+LOOP.close()

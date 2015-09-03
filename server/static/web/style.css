@@ -38,6 +38,17 @@ p.self{
 	color: black;
 }
 
+p.system{
+	background: red;
+	border: 1px solid white;
+	border-image-source: initial;
+	border-image-slice: initial;
+	border-image-width: initial;
+	border-image-outset: initial;
+	border-image-repeat: initial;
+	color: white;
+}
+
 span.user_name{
 	color: green;
 }
@@ -65,7 +76,7 @@ span.user_list_item {
 	height: 37px;
 	width: 100px;
 	background-image: url('/static/web/noisy_net.png');
-	
+
 }
 #message_send{
 	display: flex;
@@ -84,15 +95,15 @@ span.user_list_item {
 ::-webkit-scrollbar {
 width: 10px;
 }
- 
+
 ::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3); 
+    -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
     /*border-radius: 10px;*/
 }
- 
+
 ::-webkit-scrollbar-thumb {
     /*border-radius: 10px;*/
-    -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5); 
+    -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5);
 }
 
 ::-ms-browse {
