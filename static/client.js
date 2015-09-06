@@ -23,9 +23,8 @@ sub_form.on('click', function(e){
 	ws.onclose   = function() { console.log("Connection closed...");};
 	ws.error     = function(event) { console.log("Connection error..." + event);};
 	ws.onmessage = function(event) {
-		console.log('mssss', event.data);
+		var f = true;
 		data_json = $.parseJSON(event['data']);
-		// console.log(data_json);
 		if (data_json.body){
 			$('body').html(data_json.body);
 
@@ -42,18 +41,27 @@ sub_form.on('click', function(e){
 				e.preventDefault();
 			});
 		}
-		if (data_json.message || data_json.image){
+		if ((data_json.message || data_json.image) && f){
+			f = false;
 			var mes = $("<p class='message'></p>");
-			// mes.text(data_json.name);
-			mes.append($("<span class = 'message'></span>"));
-			if (data_json.message){mes.children().append(data_json.message);}
-			if (data_json.image){mes.children().append('<a class = "message" href="'+data_json.image+'" data-lightbox="example-2"><img src="'+data_json.image+'" class = "message"></a>');}
-			mes.addClass(function(){
+			nick_span = $("<span class = 'nick'></span>").text(data_json.name);
+			message_span = $("<span class = 'message'></span>");
+			message_span.text(data_json.message);
+			mes.append(nick_span);
+			mes.append(message_span);
+			$('#message').append(mes);
+			if (data_json.image){
+				p_img = $("<p class='img'></p>");
+				p_img.append('<a class = "message" href="'+data_json.image+'" data-lightbox="example-2"><img src="'+data_json.image+'" class = "message"></a>');
+				$('#message').append(p_img);
+			}
+
+			mes.append(message_span);
+				mes.addClass(function(){
 				if (name.toLowerCase() == data_json.name.toLowerCase()){return "self";}
 				else if ("server" == data_json.name.toLowerCase()){return "system";}
 				else {return ""};
 			});
-			$('#message').append(mes);
 		}
 		var user_list = $('#user_list');
 		if (data_json.user_list){
@@ -67,15 +75,14 @@ sub_form.on('click', function(e){
 				user_list.append(user_list_item);
 				});
 			}
-		};
-})
+		}
+});
 
 function readImage(input) {
     if ( input.files && input.files[0] ) {
         var FR = new FileReader();
         FR.onload = function(event) {window.img = event.target.result;};
         FR.readAsDataURL(input.files[0]);
-        // return img
     }
 }
 

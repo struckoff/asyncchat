@@ -1,5 +1,5 @@
 body{
-	background-image: url('/static/web/greyzz.png');
+	background-image: url('/static/images/greyzz.png');
 	font-family: 'Titillium Web', sans-serif;
 }
 
@@ -13,8 +13,12 @@ p.message{
 	padding: 5px;
 	display: flex;
 	justify-content:space-between;
-	background-image: url('/static/web/noisy_net.png');
+	background-image: url('/static/images/noisy_net.png');
 	color: #fff;
+}
+p.img{
+	display: flex;
+	justify-content: flex-end;
 }
 
 .top_bar_message{
@@ -75,7 +79,7 @@ span.user_list_item {
 	padding: 0 !important;
 	height: 37px;
 	width: 100px;
-	background-image: url('/static/web/noisy_net.png');
+	background-image: url('/static/images/noisy_net.png');
 
 }
 #message_send{

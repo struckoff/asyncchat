@@ -12,6 +12,7 @@ class Room(object):
     def __init__(self, password):
         self.user_list = {}
         self.__set_password(password)
+        self._log = []
 
     def check_password(self, client_passwd):
         """Cmp passwords of room and client"""
@@ -58,6 +59,11 @@ class Room(object):
         for client_item in self.user_list:
             client_item.send_str(data_json)
 
+        print(self._log)
+
+        for msg in self._log:
+            client.send_str(msg)
+
     @asyncio.coroutine
     def on_message(self, client, data, reciever=None):
         """Handle messages from user"""
@@ -70,6 +76,11 @@ class Room(object):
                      }
 
         data_json = json.dumps(data_json)
+
+        self._log.append(data_json)
+        if len(self._log) > 100:
+            self._log = self._log[-100:]
+
         if reciever is not None:
             reciever.send_str(data_json)
         else:

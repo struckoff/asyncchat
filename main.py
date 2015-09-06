@@ -4,10 +4,19 @@
 import asyncio
 import json
 import aiohttp
+import sys
 from aiohttp import web
 from lib import Room
 
 PORT = 4042
+IP = '0.0.0.0'
+if len(sys.argv) == 2:
+    PORT = int(sys.argv[1])
+elif len(sys.argv) > 2:
+    IP = sys.argv[1]
+    PORT = int(sys.argv[2])
+
+
 ROOM_DICT = {}
 
 
@@ -57,7 +66,7 @@ def websocket_handler(request):
             print('websocket connection closed')
             break
         elif msg.tp == aiohttp.MsgType.error:
-            print('ws connection closed with exception %s', ws.exception())
+            print('ws connection closed with exception %s', client.exception())
             break
 
     return client
@@ -71,7 +80,7 @@ APP.router.add_route('GET', '/ws', websocket_handler)
 
 LOOP = asyncio.get_event_loop()
 HANDLER = APP.make_handler()
-SERVER_FACTORY = LOOP.create_server(HANDLER, '0.0.0.0', 4042)
+SERVER_FACTORY = LOOP.create_server(HANDLER, IP, PORT)
 SERVER = LOOP.run_until_complete(SERVER_FACTORY)
 
 print('serving on', SERVER.sockets[0].getsockname())
