@@ -20,6 +20,10 @@ class Room(object):
         crypt.update(client_passwd.encode())
         return crypt.hexdigest() == self.__password
 
+    def has_user(self, name):
+        """Check if user with same name alredy exists in a room"""
+        return name in self.user_list.values()
+
     def __set_password(self, room_passwd):
         """Set room password"""
         crypt = hashlib.sha256()
@@ -29,20 +33,20 @@ class Room(object):
     @asyncio.coroutine
     def on_disconnect(self, client):
         """Handle disconnection of user"""
-        nick = self.user_list[client]
 
         if self.user_list.get(client):
+            nick = self.user_list[client]
             self.user_list.pop(client)
 
-        data_json = {'user_list': list(self.user_list.values()),
-                     'message': '{} has left'.format(nick),
-                     'name': 'SERVER',
-                     'time': time.time(),
-                     }
-        data_json = json.dumps(data_json)
+            data_json = {'user_list': list(self.user_list.values()),
+                         'message': '{} has left'.format(nick),
+                         'name': 'SERVER',
+                         'time': time.time(),
+                         }
+            data_json = json.dumps(data_json)
 
-        for client_item in self.user_list:
-            client_item.send_str(data_json)
+            for client_item in self.user_list:
+                client_item.send_str(data_json)
 
     @asyncio.coroutine
     def on_connect(self, client, data):
@@ -58,8 +62,6 @@ class Room(object):
         data_json = json.dumps(data_json)
         for client_item in self.user_list:
             client_item.send_str(data_json)
-
-        print(self._log)
 
         for msg in self._log:
             client.send_str(msg)

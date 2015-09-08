@@ -1,9 +1,3 @@
-body{
-	background-image: url('/static/images/greyzz.png');
-	font-family: 'Titillium Web', sans-serif;
-}
-
-
 img.message{
 	width: 200px;
 	height: 200px;
@@ -63,6 +57,16 @@ span.self{
 
 span.user_list_item {
 	display: block;
+}
+
+#error{
+	display: none;
+	text-align: center;
+	font-size: 35px;
+	background: black none repeat scroll 0% 0%;
+	color: white;
+	padding: 20px;
+	margin-bottom: 20px;
 }
 
 #chat_block{
@@ -140,11 +144,4 @@ width: 10px;
 	height: 25px;
 	padding: 0;
 	margin-left: 10px;
-}
-
-#error{
-	text-align: center;
-	font-size: 42px;
-	color: red;
-	text-transform: uppercase;
 }

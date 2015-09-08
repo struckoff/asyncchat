@@ -24,7 +24,12 @@ sub_form.on('click', function(e){
 	ws.error     = function(event) { console.log("Connection error..." + event);};
 	ws.onmessage = function(event) {
 		var f = true;
+		console.log(event);
 		data_json = $.parseJSON(event['data']);
+		if (data_json.error){
+			$('#error').text(data_json.error);
+			$('#error').show();
+		}
 		if (data_json.body){
 			$('body').html(data_json.body);
 

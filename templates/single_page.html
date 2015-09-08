@@ -4,6 +4,7 @@
 
     <meta charset="UTF-8">
     <title>SINGLE Async chat</title>
+    <link rel="stylesheet" href='/static/css/style.css'>
 
     <!-- JQuery -->
     <script src="/static/jquery-2.1.0.js"></script>
@@ -17,12 +18,10 @@
     <!-- LightBox -->
     <link rel="stylesheet" href="/static/lightbox/css/lightbox.css">
     <script src="/static/lightbox/js/lightbox.js"></script>
-    <!-- Font -->`
-    <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Titillium+Web:400,300' rel='stylesheet' type='text/css'>
   </head>
  <body>
-  <form id="sub_form" data-abide class = 'large-3 large-centered columns'>
+  <form id="login_form" data-abide class = 'large-3 large-centered columns'>
+    <div id="error"></div>
   	<div class="field">
   		<input id = 'name' type = 'text' name="name" placeholder='NICKNAME' required='' pattern="name">
   		<small class="error">Nickname is required and must be a string or string with numbers.</small>
@@ -32,56 +31,53 @@
   		<small class="error">Room name is required and must be a string or string with numbers.</small>
   	</div>
   	<div class="field">
-  		<input type = 'password' name="room_pass" placeholder='ROOM PASSWORD' pattern="name" id = 'password'>
-  		<small class="error">Room password must be a string or string with numbers.</small>
+  		<input type = 'password' name="room_pass" placeholder='ROOM PASSWORD' pattern="pass" id = 'password'>
+  		<small class="error">Room password must contain only letters and numbers.</small>
   	</div>
       <input type="button" class="login_button button expand" name='login' value="Login" id="submit">
   </form>
+
+  <style>
+  body{background-image: url('/static/images/pool_table.png');}
+
+  .login_button{
+  	background-color: #A5170F;
+  }
+
+  #login_form{
+  	padding-top: 10%;
+  }
+
+  ::-webkit-input-placeholder {
+     color: #2B452E;
+     opacity: 0.7;
+  }
+
+  :-moz-placeholder { /* Firefox 18- */
+     color: #2B452E;
+     opacity: 0.7;
+  }
+
+  ::-moz-placeholder {  /* Firefox 19+ */
+     color: #2B452E;
+     opacity: 0.7;
+  }
+
+  :-ms-input-placeholder {
+     color: #2B452E;
+     opacity: 0.7;
+  }
+  </style>
+  <script>
+  	$(document).foundation({
+  	    abide: {
+  	        patterns: {
+  	            name: /(\d+|)+[a-zA-Z_]+(\d+|)/,
+                pass: /(\d|[a-zA-Z_])+/
+  	        }
+  	    }
+  	});
+    </script>
 </body>
-
-
-
 </html>
-<script>
-	$(document).foundation({
-	    abide: {
-	        patterns: {
-	            name: /(\d+|)+[a-zA-Z_]+(\d+|)/
-	        }
-	    }
-	});
-  </script>
-
   <script src="/static/client.js"></script>
-
-<style>
-body{background-image: url('/static/images/pool_table.png');}
-
-.login_button{
-	background-color: #A5170F;
-}
-
-#sub_form{
-	padding-top: 10%;
-}
-
-::-webkit-input-placeholder {
-   color: #2B452E;
-   opacity: 0.7;
-}
-
-:-moz-placeholder { /* Firefox 18- */
-   color: #2B452E;
-   opacity: 0.7;
-}
-
-::-moz-placeholder {  /* Firefox 19+ */
-   color: #2B452E;
-   opacity: 0.7;
-}
-
-:-ms-input-placeholder {
-   color: #2B452E;
-   opacity: 0.7;
-}
-</style>

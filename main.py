@@ -34,11 +34,17 @@ def websocket_handler(request):
     client.start(request)
     room = None
 
+    @asyncio.coroutine
     def access_granted(data):
         asyncio.Task(ROOM_DICT[data['room']].on_connect(client, data))
         with open('templates/chat.html', 'r') as template:
             res = json.dumps({'body': template.read()})
             client.send_str(res)
+
+    @asyncio.coroutine
+    def access_denied(reason):
+        client.send_str(json.dumps({"error": reason}))
+        yield from client.close()
 
     while True:
         msg = yield from client.receive()
@@ -49,13 +55,15 @@ def websocket_handler(request):
                 room = ROOM_DICT.get(data['room'])
                 if room:
                     if not room.check_password(data['room_pass']):
-                        yield from client.close()
+                        yield from access_denied("Access denied")
+                    elif room.has_user(data['name']):
+                        yield from access_denied("User already exists")
                     else:
-                        access_granted(data)
+                        yield from access_granted(data)
                 else:
                     ROOM_DICT[data['room']] = Room(data['room_pass'])
                     room = ROOM_DICT.get(data['room'])
-                    access_granted(data)
+                    yield from access_granted(data)
 
                 # client.send_str(msg.data)
             elif data['type_msg'] == 'message' and (room is not None):
