@@ -32,8 +32,18 @@ sub_form.on('click', function(e){
 		}
 		if (data_json.body){
 			$('body').html(data_json.body);
+            
+            function readImage(input) {
+                console.log(input);
+                if ( input.files && input.files[0] ) {
+                    var FR = new FileReader();
+                    FR.onload = function(event) {window.img = event.target.result;};
+                    FR.readAsDataURL(input.files[0]);
+                }
+            }
+            $("#uploader").on("change", function(){console.log(this); readImage(this)});
 
-			$("#send").on("click", function(e){
+            $("#send").on("click", function(e){
 				data = {
 							'message' :$('#sending_message').val(),
 							'type_msg':'message'
@@ -83,13 +93,13 @@ sub_form.on('click', function(e){
 		}
 });
 
-function readImage(input) {
-    if ( input.files && input.files[0] ) {
-        var FR = new FileReader();
-        FR.onload = function(event) {window.img = event.target.result;};
-        FR.readAsDataURL(input.files[0]);
-    }
-}
 
+//function EL(id) { return document.getElementById(id); } // Get el by ID helper function
 var img = 0;
-$("#uploader").change(function(){readImage(this);});
+//$('document').ready(function(){
+
+
+//$("#uploader").on("change", function(){
+//console.log(98, this);
+//readImage(this);});
+//})
