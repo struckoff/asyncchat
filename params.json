@@ -1,0 +1,6 @@
+{
+  "name": "Asyncchat",
+  "tagline": "Fine! I'll go build my own chat, with async, python and websockets.",
+  "body": "### What is it?\r\nSimple example of an asynchronous chat.\r\n\r\nThis is single page app based on websockets. There is no template engine and only aiohttp as a webserver.\r\n\r\n### Technologies\r\n\r\n* Python\r\n  * aiohttp\r\n  * asyncio\r\n* JS\r\n  * websockets\r\n  * JQuery\r\n  * foundation\r\n\r\n### Run\r\n````bash\r\npython main.py [[ADDRESS] PORT]\r\n````\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
